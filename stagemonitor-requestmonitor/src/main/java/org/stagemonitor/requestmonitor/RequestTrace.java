@@ -43,8 +43,11 @@ public class RequestTrace {
 	private Map<String, String> parameters;
 	@JsonProperty("measurement_start")
 	private final long measurementStart;
+	private final String system;
 	private final String application;
 	private final String host;
+	@JsonProperty("host_ipv4")
+	private final String hostIPv4;
 	private final String instance;
 	private String exceptionMessage;
 	private String exceptionClass;
@@ -65,8 +68,10 @@ public class RequestTrace {
 		this.requestMonitorPlugin = requestMonitorPlugin;
 		this.id = requestId != null ? requestId : UUID.randomUUID().toString();
 		this.measurementStart = measurementSession.getStartTimestamp();
+		this.system = measurementSession.getSystemName();
 		this.application = measurementSession.getApplicationName();
 		this.host = measurementSession.getHostName();
+		this.hostIPv4 = measurementSession.getHostIPv4();
 		this.instance = measurementSession.getInstanceName();
 		this.timestamp = StringUtils.dateAsIsoString(new Date());
 	}
@@ -155,13 +160,17 @@ public class RequestTrace {
 		this.parameters = parameters;
 	}
 
+	public String getSystem() {
+		return system;
+	}
+
 	public String getApplication() {
 		return application;
 	}
 
-	public String getHost() {
-		return host;
-	}
+	public String getHost() { return host; }
+
+	public String getHostIPv4() { return hostIPv4; }
 
 	public String getInstance() {
 		return instance;
