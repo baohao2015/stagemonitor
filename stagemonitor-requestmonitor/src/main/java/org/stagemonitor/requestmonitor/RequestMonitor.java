@@ -196,15 +196,17 @@ public class RequestMonitor {
 	private synchronized void getInstanceNameFromExecution(MonitoredRequest<?> monitoredRequest) {
 		final MeasurementSession measurementSession = Stagemonitor.getMeasurementSession();
 		if (measurementSession.getInstanceName() == null) {
-			MeasurementSession session = new MeasurementSession(measurementSession.getApplicationName(), measurementSession.getHostName(),
-					monitoredRequest.getInstanceName());
+			MeasurementSession session = new MeasurementSession(measurementSession.getSystemName(),
+					measurementSession.getApplicationName(), measurementSession.getHostName(),
+					measurementSession.getHostIPv4(), monitoredRequest.getInstanceName());
 			Stagemonitor.setMeasurementSession(session);
 		}
 	}
 
 	private synchronized void createMeasurementSession() {
 		if (Stagemonitor.getMeasurementSession().isNull()) {
-			MeasurementSession session = new MeasurementSession(corePlugin.getApplicationName(), corePlugin.getHostName(),
+			MeasurementSession session = new MeasurementSession(corePlugin.getSystemName(),
+					corePlugin.getApplicationName(), corePlugin.getHostName(), corePlugin.getHostIPv4(),
 					corePlugin.getInstanceName());
 			Stagemonitor.setMeasurementSession(session);
 		}

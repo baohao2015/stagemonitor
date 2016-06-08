@@ -67,7 +67,8 @@ public class AlertSender {
 		check.setMetricCategory(MetricCategory.TIMER);
 		check.getWarn().add(new Threshold("mean", Threshold.Operator.GREATER_EQUAL, 1));
 
-		Incident testIncident = new Incident(check, new MeasurementSession("testApp", "testHost", "testInstance"),
+		Incident testIncident = new Incident(check, new MeasurementSession("testSys", "testApp",
+				"testHost", "127.0.0.1", "testInstance"),
 				Arrays.asList(new CheckResult("test", 10, status)));
 
 		tryAlert(testIncident, subscription, alerterByType.get(subscription.getAlerterType()));

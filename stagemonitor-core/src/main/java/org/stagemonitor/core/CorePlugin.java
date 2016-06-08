@@ -52,6 +52,7 @@ import org.stagemonitor.core.util.StringUtils;
  */
 public class CorePlugin extends StagemonitorPlugin {
 
+	public static final String DEFAULT_SYSTEM_NAME = "My System";
 	public static final String DEFAULT_APPLICATION_NAME = "My Application";
 
 	private static final String CORE_PLUGIN_NAME = "Core";
@@ -203,6 +204,16 @@ public class CorePlugin extends StagemonitorPlugin {
 			.tags(METRICS_STORE, ELASTICSEARCH)
 			.configurationCategory(CORE_PLUGIN_NAME)
 			.build();
+	private final ConfigurationOption<String> systemName = ConfigurationOption.stringOption()
+			.key("stagemonitor.systemName")
+			.dynamic(false)
+			.label("System name")
+			.description("The name of the system this application belongs to.\n" +
+					"Either this property or the display-name in web.xml is mandatory!")
+			.defaultValue(DEFAULT_SYSTEM_NAME)
+			.configurationCategory(CORE_PLUGIN_NAME)
+			.tags("important")
+			.build();
 	private final ConfigurationOption<String> applicationName = ConfigurationOption.stringOption()
 			.key("stagemonitor.applicationName")
 			.dynamic(false)
@@ -233,6 +244,16 @@ public class CorePlugin extends StagemonitorPlugin {
 					"If this property is not set, the host name will default to resolving the host name for localhost, " +
 					"if this fails it will be loaded from the environment, either from COMPUTERNAME or HOSTNAME.")
 			.defaultValue(getNameOfLocalHost())
+			.configurationCategory(CORE_PLUGIN_NAME)
+			.build();
+	private final ConfigurationOption<String> hostIPv4 = ConfigurationOption.stringOption()
+			.key("stagemonitor.hostIPv4")
+			.dynamic(false)
+			.label("Host IP v4 address")
+			.description("The host ip v4 address.\n" +
+					"If this property is not set, the host address will default to resolving the host address for localhost, " +
+					"if this fails it will be loaded from the environment, either from COMPUTERIPV4 or HOSTIPV4.")
+			.defaultValue(getIPv4OfLocalHost())
 			.configurationCategory(CORE_PLUGIN_NAME)
 			.build();
 	private final ConfigurationOption<List<String>> elasticsearchUrls = ConfigurationOption.builder(ListValueConverter.STRINGS_VALUE_CONVERTER, List.class)
@@ -527,6 +548,7 @@ public class CorePlugin extends StagemonitorPlugin {
 
 	private String getGraphitePrefix(MeasurementSession measurementSession) {
 		return name("stagemonitor",
+				sanitizeGraphiteMetricSegment(measurementSession.getSystemName()),
 				sanitizeGraphiteMetricSegment(measurementSession.getApplicationName()),
 				sanitizeGraphiteMetricSegment(measurementSession.getInstanceName()),
 				sanitizeGraphiteMetricSegment(measurementSession.getHostName()));
@@ -607,14 +629,28 @@ public class CorePlugin extends StagemonitorPlugin {
 	}
 
 	static String getHostNameFromEnv() {
-		// try environment properties.
-		String host = System.getenv("COMPUTERNAME");
-		if (host != null) {
-			return host;
+		return getValueFromEnv("COMPUTERNAME", "HOSTNAME");
+	}
+
+	public static String getIPv4OfLocalHost() {
+		try {
+			InetAddress address = InetAddress.getByName(getNameOfLocalHost());
+			return address.getHostAddress();
+		} catch (Exception e) {
+			return getHostIPv4FromEnv();
 		}
-		host = System.getenv("HOSTNAME");
-		if (host != null) {
-			return host;
+	}
+
+	static String getHostIPv4FromEnv() {
+		return getValueFromEnv("COMPUTERIPV4", "HOSTIPV4");
+	}
+
+	static String getValueFromEnv(String... keys) {
+		for (String key : keys) {
+			String value = System.getenv(key);
+			if (value != null) {
+				return value;
+			}
 		}
 		return null;
 	}
@@ -651,6 +687,8 @@ public class CorePlugin extends StagemonitorPlugin {
 		return graphitePort.getValue();
 	}
 
+	public String getSystemName() { return systemName.getValue(); }
+
 	public String getApplicationName() {
 		return applicationName.getValue();
 	}
@@ -659,9 +697,9 @@ public class CorePlugin extends StagemonitorPlugin {
 		return instanceName.getValue();
 	}
 
-	public String getHostName() {
-		return hostName.getValue();
-	}
+	public String getHostName() { return hostName.getValue(); }
+
+	public String getHostIPv4() { return hostIPv4.getValue(); }
 
 	/**
 	 * Cycles through all provided Elasticsearch URLs and returns one

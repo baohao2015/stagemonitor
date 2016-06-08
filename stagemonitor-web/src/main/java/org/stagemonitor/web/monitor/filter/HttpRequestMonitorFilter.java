@@ -67,8 +67,9 @@ public class HttpRequestMonitorFilter extends AbstractExclusionFilter implements
 
 	@Override
 	public void initInternal(FilterConfig filterConfig) throws ServletException {
-		final MeasurementSession measurementSession = new MeasurementSession(getApplicationName(filterConfig),
-				corePlugin.getHostName(), corePlugin.getInstanceName());
+		final MeasurementSession measurementSession = new MeasurementSession(getSystemName(),
+				getApplicationName(filterConfig), corePlugin.getHostName(), corePlugin.getHostIPv4(),
+				corePlugin.getInstanceName());
 		Stagemonitor.setMeasurementSession(measurementSession);
 		final ServletContext servletContext = filterConfig.getServletContext();
 		atLeastServletApi3 = servletContext.getMajorVersion() >= 3;
@@ -77,6 +78,14 @@ public class HttpRequestMonitorFilter extends AbstractExclusionFilter implements
 			htmlInjector.init(new HtmlInjector.InitArguments(configuration, servletContext));
 			htmlInjectors.add(htmlInjector);
 		}
+	}
+
+	private String getSystemName() {
+		String name = corePlugin.getSystemName();
+		if (StringUtils.isEmpty(name)) {
+			name = CorePlugin.DEFAULT_SYSTEM_NAME;
+		}
+		return name;
 	}
 
 	private String getApplicationName(FilterConfig filterConfig) {

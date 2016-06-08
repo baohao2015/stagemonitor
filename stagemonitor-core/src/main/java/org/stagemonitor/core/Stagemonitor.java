@@ -237,7 +237,7 @@ public final class Stagemonitor {
 	public static void reset() {
 		started = false;
 		disabled = false;
-		measurementSession = new MeasurementSession(null, null, null);
+		measurementSession = new MeasurementSession(null, null, null, null, null);
 		metric2Registry.removeMatching(Metric2Filter.ALL);
 		if (configuration == null) {
 			reloadPluginsAndConfiguration();
@@ -248,8 +248,9 @@ public final class Stagemonitor {
 
 	private static void tryStartMonitoring() {
 		CorePlugin corePlugin = getPlugin(CorePlugin.class);
-		MeasurementSession session = new MeasurementSession(corePlugin.getApplicationName(),
-				corePlugin.getHostName(), corePlugin.getInstanceName());
+		MeasurementSession session = new MeasurementSession(corePlugin.getSystemName(),
+				corePlugin.getApplicationName(), corePlugin.getHostName(), corePlugin.getHostIPv4(),
+				corePlugin.getInstanceName());
 		startMonitoring(session);
 	}
 
