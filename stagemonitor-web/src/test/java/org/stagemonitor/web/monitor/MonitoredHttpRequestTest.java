@@ -29,7 +29,8 @@ public class MonitoredHttpRequestTest {
 	@Before
 	public void setUp() throws Exception {
 		Stagemonitor.reset();
-		Stagemonitor.startMonitoring(new MeasurementSession("MonitoredHttpRequestTest", "testHost", "testInstance")).get();
+		Stagemonitor.startMonitoring(new MeasurementSession("MonitoredHttpRequestTest", "MonitoredHttpRequestTest",
+				"testHost", "127.0.0.1", "testInstance")).get();
 	}
 
 	@After
