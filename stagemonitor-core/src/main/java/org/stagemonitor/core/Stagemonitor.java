@@ -248,7 +248,7 @@ public final class Stagemonitor {
 
 	private static void tryStartMonitoring() {
 		CorePlugin corePlugin = getPlugin(CorePlugin.class);
-		MeasurementSession session = new MeasurementSession(corePlugin.getSystemName(),
+		MeasurementSession session = new MeasurementSession(corePlugin.getGid(),
 				corePlugin.getApplicationName(), corePlugin.getHostName(), corePlugin.getHostIPv4(),
 				corePlugin.getInstanceName());
 		startMonitoring(session);

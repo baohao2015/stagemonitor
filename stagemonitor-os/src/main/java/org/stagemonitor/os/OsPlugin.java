@@ -117,10 +117,10 @@ public class OsPlugin extends StagemonitorPlugin  {
 
 	static MeasurementSession getMeasurementSession() {
 		final CorePlugin corePlugin = Stagemonitor.getPlugin(CorePlugin.class);
-		String systemName = corePlugin.getSystemName() != null ? corePlugin.getSystemName() : "sys";
+		String gid = corePlugin.getGid() != null ? corePlugin.getGid() : "gid";
 		String applicationName = corePlugin.getApplicationName() != null ? corePlugin.getApplicationName() : "os";
 		String instanceName = corePlugin.getInstanceName() != null ? corePlugin.getInstanceName() : "host";
-		return new MeasurementSession(systemName, applicationName, corePlugin.getHostName(),
+		return new MeasurementSession(gid, applicationName, corePlugin.getHostName(),
 				corePlugin.getHostIPv4(), instanceName);
 	}
 

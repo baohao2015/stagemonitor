@@ -67,7 +67,7 @@ public class HttpRequestMonitorFilter extends AbstractExclusionFilter implements
 
 	@Override
 	public void initInternal(FilterConfig filterConfig) throws ServletException {
-		final MeasurementSession measurementSession = new MeasurementSession(getSystemName(),
+		final MeasurementSession measurementSession = new MeasurementSession(getGid(),
 				getApplicationName(filterConfig), corePlugin.getHostName(), corePlugin.getHostIPv4(),
 				corePlugin.getInstanceName());
 		Stagemonitor.setMeasurementSession(measurementSession);
@@ -80,12 +80,12 @@ public class HttpRequestMonitorFilter extends AbstractExclusionFilter implements
 		}
 	}
 
-	private String getSystemName() {
-		String name = corePlugin.getSystemName();
-		if (StringUtils.isEmpty(name)) {
-			name = CorePlugin.DEFAULT_SYSTEM_NAME;
+	private String getGid() {
+		String gid = corePlugin.getGid();
+		if (StringUtils.isEmpty(gid)) {
+			gid = CorePlugin.getGlobalIdentity();
 		}
-		return name;
+		return gid;
 	}
 
 	private String getApplicationName(FilterConfig filterConfig) {

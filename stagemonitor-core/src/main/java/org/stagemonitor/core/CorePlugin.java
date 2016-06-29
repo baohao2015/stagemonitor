@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,7 +53,6 @@ import org.stagemonitor.core.util.StringUtils;
  */
 public class CorePlugin extends StagemonitorPlugin {
 
-	public static final String DEFAULT_SYSTEM_NAME = "My System";
 	public static final String DEFAULT_APPLICATION_NAME = "My Application";
 
 	private static final String CORE_PLUGIN_NAME = "Core";
@@ -204,13 +204,13 @@ public class CorePlugin extends StagemonitorPlugin {
 			.tags(METRICS_STORE, ELASTICSEARCH)
 			.configurationCategory(CORE_PLUGIN_NAME)
 			.build();
-	private final ConfigurationOption<String> systemName = ConfigurationOption.stringOption()
-			.key("stagemonitor.systemName")
+	private final ConfigurationOption<String> gid = ConfigurationOption.stringOption()
+			.key("stagemonitor.gid")
 			.dynamic(false)
-			.label("System name")
-			.description("The name of the system this application belongs to.\n" +
+			.label("Global Identity")
+			.description("The identity of the monitored object this application belongs to.\n" +
 					"Either this property or the display-name in web.xml is mandatory!")
-			.defaultValue(DEFAULT_SYSTEM_NAME)
+			.defaultValue(getGlobalIdentity())
 			.configurationCategory(CORE_PLUGIN_NAME)
 			.tags("important")
 			.build();
@@ -548,7 +548,7 @@ public class CorePlugin extends StagemonitorPlugin {
 
 	private String getGraphitePrefix(MeasurementSession measurementSession) {
 		return name("stagemonitor",
-				sanitizeGraphiteMetricSegment(measurementSession.getSystemName()),
+				sanitizeGraphiteMetricSegment(measurementSession.getGid()),
 				sanitizeGraphiteMetricSegment(measurementSession.getApplicationName()),
 				sanitizeGraphiteMetricSegment(measurementSession.getInstanceName()),
 				sanitizeGraphiteMetricSegment(measurementSession.getHostName()));
@@ -645,6 +645,15 @@ public class CorePlugin extends StagemonitorPlugin {
 		return getValueFromEnv("COMPUTERIPV4", "HOSTIPV4");
 	}
 
+	public static String getGlobalIdentity() {
+		String gid = getGlobalIdentityFromEnv();
+		return StringUtils.isEmpty(gid) ? UUID.randomUUID().toString() : gid;
+	}
+
+	static String getGlobalIdentityFromEnv() {
+		return getValueFromEnv("MONITORGID");
+	}
+
 	static String getValueFromEnv(String... keys) {
 		for (String key : keys) {
 			String value = System.getenv(key);
@@ -687,7 +696,7 @@ public class CorePlugin extends StagemonitorPlugin {
 		return graphitePort.getValue();
 	}
 
-	public String getSystemName() { return systemName.getValue(); }
+	public String getGid() { return gid.getValue(); }
 
 	public String getApplicationName() {
 		return applicationName.getValue();

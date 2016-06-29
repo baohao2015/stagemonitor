@@ -49,7 +49,7 @@ import org.stagemonitor.core.util.JsonUtils;
 public class ThresholdMonitoringReporterTest {
 
 	private final MeasurementSession measurementSession = new MeasurementSession(
-			"testSystem", "testApp", "testHost", "127.0.0.1", "testInstance");
+			"testGID", "testApp", "testHost", "127.0.0.1", "testInstance");
 	private ThresholdMonitoringReporter thresholdMonitoringReporter;
 	private Alerter alerter;
 	private IncidentRepository incidentRepository;
@@ -176,7 +176,7 @@ public class ThresholdMonitoringReporterTest {
 		Check check = createCheckCheckingMean(2, 6);
 		when(alertingPlugin.getChecks()).thenReturn(Collections.singletonMap(check.getId(), check));
 		incidentRepository.createIncident(
-				new Incident(check, new MeasurementSession("testSystem", "testApp", "testHost2",
+				new Incident(check, new MeasurementSession("testGID", "testApp", "testHost2",
 						"127.0.0.1", "testInstance"),
 						Arrays.asList(new CheckResult("test", 10, CheckResult.Status.CRITICAL))));
 

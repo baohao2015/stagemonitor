@@ -21,7 +21,7 @@ import org.stagemonitor.core.util.StringUtils;
 public class MeasurementSession {
 
 	private final String id;
-	private final String systemName;
+	private final String gid;
 	private final String applicationName;
 	private final String hostName;
 	private final String hostIPv4;
@@ -32,29 +32,29 @@ public class MeasurementSession {
 	private final String stringRepresentation;
 
 	public MeasurementSession(
-			String systemName,
+			String gid,
 			String applicationName,
 			String hostName,
 			String hostIPv4,
 			String instanceName) {
-		this(UUID.randomUUID().toString(), systemName, applicationName, hostName, hostIPv4, instanceName);
+		this(UUID.randomUUID().toString(), gid, applicationName, hostName, hostIPv4, instanceName);
 	}
 
 	@JsonCreator
 	public MeasurementSession(@JsonProperty("id") String id,
-							  @JsonProperty("systemName") String systemName,
+							  @JsonProperty("gid") String gid,
 							  @JsonProperty("applicationName") String applicationName,
 							  @JsonProperty("hostName") String hostName,
 							  @JsonProperty("hostIPv4") String hostIPv4,
 							  @JsonProperty("instanceName") String instanceName) {
 
-		this.systemName = replaceWhitespacesWithDash(systemName);
+		this.gid = replaceWhitespacesWithDash(gid);
 		this.applicationName = replaceWhitespacesWithDash(applicationName);
 		this.hostName = replaceWhitespacesWithDash(hostName);
 		this.hostIPv4 = replaceWhitespacesWithDash(hostIPv4);
 		this.instanceName = replaceWhitespacesWithDash(instanceName);
 		this.id = id;
-		stringRepresentation = "[system=" + systemName + "] [application=" + applicationName + "] " +
+		stringRepresentation = "[gid=" + gid + "] [application=" + applicationName + "] " +
 				"[instance=" + instanceName + "] [host=" + hostName + "] [ip=" + hostIPv4 + "]";
 		startTimestamp = System.currentTimeMillis();
 	}
@@ -63,8 +63,8 @@ public class MeasurementSession {
 		return id;
 	}
 
-	public String getSystemName() {
-		return systemName;
+	public String getGid() {
+		return gid;
 	}
 
 	public String getApplicationName() {
@@ -124,7 +124,7 @@ public class MeasurementSession {
 	public Map<String, String> asMap() {
 		final TreeMap<String, String> result = new TreeMap<String, String>();
 		result.put("measurement_start", Long.toString(startTimestamp));
-		result.put("system", systemName);
+		result.put("gid", gid);
 		result.put("application", applicationName);
 		result.put("host", hostName);
 		result.put("host_ipv4", hostIPv4);

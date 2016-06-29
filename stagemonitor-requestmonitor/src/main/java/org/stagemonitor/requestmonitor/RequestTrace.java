@@ -43,7 +43,7 @@ public class RequestTrace {
 	private Map<String, String> parameters;
 	@JsonProperty("measurement_start")
 	private final long measurementStart;
-	private final String system;
+	private final String gid;
 	private final String application;
 	private final String host;
 	@JsonProperty("host_ipv4")
@@ -68,7 +68,7 @@ public class RequestTrace {
 		this.requestMonitorPlugin = requestMonitorPlugin;
 		this.id = requestId != null ? requestId : UUID.randomUUID().toString();
 		this.measurementStart = measurementSession.getStartTimestamp();
-		this.system = measurementSession.getSystemName();
+		this.gid = measurementSession.getGid();
 		this.application = measurementSession.getApplicationName();
 		this.host = measurementSession.getHostName();
 		this.hostIPv4 = measurementSession.getHostIPv4();
@@ -160,8 +160,8 @@ public class RequestTrace {
 		this.parameters = parameters;
 	}
 
-	public String getSystem() {
-		return system;
+	public String getGid() {
+		return gid;
 	}
 
 	public String getApplication() {

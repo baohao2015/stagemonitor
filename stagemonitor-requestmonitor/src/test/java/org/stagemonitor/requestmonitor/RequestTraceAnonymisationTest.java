@@ -23,7 +23,7 @@ public class RequestTraceAnonymisationTest {
 	@Before
 	public void setUp() throws Exception {
 		measurementSession = new MeasurementSession(
-				"RequestTraceAnonymisationTest", "RequestTraceAnonymisationTest", "test", "test", "127.0.0.1");
+				"9cfccb69-09c6-463d-9abc-48cb015ae522", "RequestTraceAnonymisationTest", "test", "test", "127.0.0.1");
 		requestMonitorPlugin = mock(RequestMonitorPlugin.class);
 		final Configuration configuration = mock(Configuration.class);
 		final CorePlugin corePlugin = mock(CorePlugin.class);
