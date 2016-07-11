@@ -140,6 +140,17 @@ public class Metric2Registry implements Metric2Set {
 	}
 
 	/**
+	 * Return the {@link MeterExt} registered under this name; or create and register
+	 * a new {@link MeterExt} if none is registered.
+	 *
+	 * @param name the name of the metric
+	 * @return a new or pre-existing {@link MeterExt}
+	 */
+	public MeterExt meterExt(MetricName name) {
+		return getOrAdd(name, MetricBuilder.METEREXTS);
+	}
+
+	/**
 	 * Return the {@link Timer} registered under this name; or create and register
 	 * a new {@link Timer} if none is registered.
 	 *
@@ -148,6 +159,17 @@ public class Metric2Registry implements Metric2Set {
 	 */
 	public Timer timer(MetricName name) {
 		return getOrAdd(name, MetricBuilder.TIMERS);
+	}
+
+	/**
+	 * Return the {@link TimerExt} registered under this name; or create and register
+	 * a new {@link TimerExt} if none is registered.
+	 *
+	 * @param name the name of the metric
+	 * @return a new or pre-existing {@link TimerExt}
+	 */
+	public TimerExt timerExt(MetricName name) {
+		return getOrAdd(name, MetricBuilder.TIMEREXTS);
 	}
 
 	/**
@@ -384,6 +406,18 @@ public class Metric2Registry implements Metric2Set {
 			}
 		};
 
+		MetricBuilder<MeterExt> METEREXTS = new MetricBuilder<MeterExt>() {
+			@Override
+			public MeterExt newMetric() {
+				return new MeterExt();
+			}
+
+			@Override
+			public boolean isInstance(Metric metric) {
+				return MeterExt.class.isInstance(metric);
+			}
+		};
+
 		MetricBuilder<Timer> TIMERS = new MetricBuilder<Timer>() {
 			@Override
 			public Timer newMetric() {
@@ -393,6 +427,18 @@ public class Metric2Registry implements Metric2Set {
 			@Override
 			public boolean isInstance(Metric metric) {
 				return Timer.class.isInstance(metric);
+			}
+		};
+
+		MetricBuilder<TimerExt> TIMEREXTS = new MetricBuilder<TimerExt>() {
+			@Override
+			public TimerExt newMetric() {
+				return new TimerExt();
+			}
+
+			@Override
+			public boolean isInstance(Metric metric) {
+				return TimerExt.class.isInstance(metric);
 			}
 		};
 

@@ -5,6 +5,7 @@ import static org.stagemonitor.core.metrics.metrics2.MetricName.name;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.codahale.metrics.Counter;
@@ -107,15 +108,50 @@ public class ElasticsearchReporter extends ScheduledMetrics2Reporter {
 				writeSnapshot(snapshot, jg);
 			}
 		}, os, bulkActionBytes);
-		reportMetric(meters, timestamp, new ValueWriter<Meter>() {
+
+		Map<MetricName, Meter> meterMap = new HashMap<MetricName, Meter>();
+		Map<MetricName, MeterExt> meterExtMap = new HashMap<MetricName, MeterExt>();
+
+		for (Map.Entry<MetricName, Meter> metricNameMeterEntry : meters.entrySet()) {
+			if (metricNameMeterEntry.getValue() instanceof MeterExt) {
+				meterExtMap.put(metricNameMeterEntry.getKey(), (MeterExt) metricNameMeterEntry.getValue());
+			} else {
+				meterMap.put(metricNameMeterEntry.getKey(), metricNameMeterEntry.getValue());
+			}
+		}
+
+		reportMetric(meterMap, timestamp, new ValueWriter<Meter>() {
 			public void writeValues(Meter meter, JsonGenerator jg) throws IOException {
 				writeMetered(meter, jg);
 			}
 		}, os, bulkActionBytes);
-		reportMetric(timers, timestamp, new ValueWriter<Timer>() {
+		reportMetric(meterExtMap, timestamp, new ValueWriter<MeterExt>() {
+			public void writeValues(MeterExt meterExt, JsonGenerator jg) throws IOException {
+				writeMeterExt(meterExt, jg);
+			}
+		}, os, bulkActionBytes);
+
+		Map<MetricName, Timer> timerMap = new HashMap<MetricName, Timer>();
+		Map<MetricName, TimerExt> timerExtMap = new HashMap<MetricName, TimerExt>();
+
+		for (Map.Entry<MetricName, Timer> metricNameTimerEntry : timers.entrySet()) {
+			if (metricNameTimerEntry.getValue() instanceof TimerExt) {
+				timerExtMap.put(metricNameTimerEntry.getKey(), (TimerExt) metricNameTimerEntry.getValue());
+			} else {
+				timerMap.put(metricNameTimerEntry.getKey(), metricNameTimerEntry.getValue());
+			}
+		}
+
+		reportMetric(timerMap, timestamp, new ValueWriter<Timer>() {
 			public void writeValues(Timer timer, JsonGenerator jg) throws IOException {
 				writeMetered(timer, jg);
 				writeSnapshot(timer.getSnapshot(), jg);
+			}
+		}, os, bulkActionBytes);
+		reportMetric(timerExtMap, timestamp, new ValueWriter<TimerExt>() {
+			public void writeValues(TimerExt timerExt, JsonGenerator jg) throws IOException {
+				writeMeterExt(timerExt.getMeterExt(), jg);
+				writeSnapshot(timerExt.getSnapshot(), jg);
 			}
 		}, os, bulkActionBytes);
 	}
@@ -140,6 +176,13 @@ public class ElasticsearchReporter extends ScheduledMetrics2Reporter {
 		writeDoubleUnlessNaN(jg, "m5_rate", convertRate(metered.getFiveMinuteRate()));
 		writeDoubleUnlessNaN(jg, "m15_rate", convertRate(metered.getFifteenMinuteRate()));
 		writeDoubleUnlessNaN(jg, "mean_rate", convertRate(metered.getMeanRate()));
+	}
+
+	private void writeMeterExt(MeterExt meterExt, JsonGenerator jg) throws IOException {
+		writeMetered(meterExt, jg);
+		jg.writeNumberField("m1_count", meterExt.getOneMinuteCount());
+		jg.writeNumberField("m5_count", meterExt.getFiveMinuteCount());
+		jg.writeNumberField("m15_count", meterExt.getFifteenMinuteCount());
 	}
 
 	private <T extends Metric> void reportMetric(Map<MetricName, T> metrics, long timestamp, ValueWriter<T> valueWriter,

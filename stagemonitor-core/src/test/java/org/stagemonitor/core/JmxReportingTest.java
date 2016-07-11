@@ -28,7 +28,9 @@ public class JmxReportingTest {
 		when(corePlugin.isReportToJMX()).thenReturn(true);
 		when(configuration.getConfig(CorePlugin.class)).thenReturn(corePlugin);
 
-		new CorePlugin(mock(ElasticsearchClient.class)).registerReporters(registry, configuration, new MeasurementSession("JmxReportingTest", "test", "test"));
+		new CorePlugin(mock(ElasticsearchClient.class)).registerReporters(registry, configuration,
+				new MeasurementSession("a056120d-d28d-4438-98ef-7991f36886c5", "JmxReportingTest",
+						"test", "127.0.0.1", "test"));
 	}
 
 	@Test

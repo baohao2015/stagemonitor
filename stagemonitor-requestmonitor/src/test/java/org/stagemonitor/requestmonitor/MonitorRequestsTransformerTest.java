@@ -38,7 +38,8 @@ public class MonitorRequestsTransformerTest {
 		metricRegistry = Stagemonitor.getMetric2Registry();
 		testClassLevelAnnotationClass = new TestClassLevelAnnotationClass();
 		metricRegistry.removeMatching(Metric2Filter.ALL);
-		Stagemonitor.setMeasurementSession(new MeasurementSession("MonitorRequestsTransformerTest", "test", "test"));
+		Stagemonitor.setMeasurementSession(new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "MonitorRequestsTransformerTest", "test", "127.0.0.1", "test"));
 		Stagemonitor.startMonitoring().get();
 		requestTraceCapturingReporter = new RequestTraceCapturingReporter();
 	}

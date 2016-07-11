@@ -45,11 +45,11 @@ public class StagemonitorP6Logger implements P6Logger {
 	}
 
 	private void trackDbMetrics(long elapsed) {
-		metricRegistry.timer(name("jdbc_statement").tag("signature", "All").build()).update(elapsed, TimeUnit.MILLISECONDS);
+		metricRegistry.timerExt(name("jdbc_statement").tag("signature", "All").build()).update(elapsed, TimeUnit.MILLISECONDS);
 		String daoMethodSignature = getDaoMethodSignature();
 		if (daoMethodSignature != null) {
 			metricRegistry
-					.timer(name("jdbc_statement").tag("signature", daoMethodSignature).build())
+					.timerExt(name("jdbc_statement").tag("signature", daoMethodSignature).build())
 					.update(elapsed, TimeUnit.MILLISECONDS);
 		}
 	}

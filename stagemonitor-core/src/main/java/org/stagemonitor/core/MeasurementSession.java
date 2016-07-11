@@ -85,7 +85,7 @@ public class MeasurementSession {
 
 	@JsonIgnore
 	public boolean isInitialized() {
-		return applicationName != null && instanceName != null && hostName != null;
+		return gid != null && applicationName != null && instanceName != null && hostName != null && hostIPv4 != null;
 	}
 
 	public String getStart() {
@@ -117,7 +117,7 @@ public class MeasurementSession {
 
 	@JsonIgnore
 	public boolean isNull() {
-		return applicationName == null && instanceName == null && hostName == null;
+		return gid == null && applicationName == null && instanceName == null && hostName == null && hostIPv4 == null;
 	}
 
 	@JsonIgnore

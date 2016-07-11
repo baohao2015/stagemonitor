@@ -37,7 +37,9 @@ public class ElasticsearchRequestTraceReporterIntegrationTest extends AbstractEl
 
 	@Test
 	public void reportRequestTrace() throws Exception {
-		final RequestTrace requestTrace = new RequestTrace("1", new MeasurementSession("ERTRIT", "test", "test"), requestMonitorPlugin);
+		final RequestTrace requestTrace = new RequestTrace("1",
+				new MeasurementSession("a056120d-d28d-4438-98ef-7991f36886c5", "ERTRIT", "test", "127.0.0.1", "test"),
+				requestMonitorPlugin);
 		requestTrace.setParameters(Collections.singletonMap("attr.Color", "Blue"));
 		requestTrace.addCustomProperty("foo.bar", "baz");
 		reporter.reportRequestTrace(new RequestTraceReporter.ReportArguments(requestTrace));

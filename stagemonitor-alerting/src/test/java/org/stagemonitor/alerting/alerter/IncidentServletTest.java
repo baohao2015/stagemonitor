@@ -30,7 +30,8 @@ public class IncidentServletTest {
 		alertingPlugin = mock(AlertingPlugin.class);
 		ConcurrentMapIncidentRepository incidentRepository = new ConcurrentMapIncidentRepository();
 		incident = new Incident(ThresholdMonitoringReporterTest.createCheckCheckingMean(1, 5),
-				new MeasurementSession("testApp", "testHost2", "testInstance"),
+				new MeasurementSession("a056120d-d28d-4438-98ef-7991f36886c5",
+						"testApp", "testHost2", "127.0.0.1", "testInstance"),
 				Arrays.asList(new CheckResult("test", 10, CheckResult.Status.CRITICAL),
 						new CheckResult("test", 10, CheckResult.Status.ERROR)));
 		incidentRepository.createIncident(incident);

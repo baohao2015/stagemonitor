@@ -13,7 +13,8 @@ public class TestUnnestException {
 
 	@Test
 	public void testUnnestNestedServletException() throws Exception {
-		final MeasurementSession measurementSession = new MeasurementSession("TestUnnestException", "test", "test");
+		final MeasurementSession measurementSession = new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "TestUnnestException", "test", "127.0.0.1", "test");
 		final HttpRequestTrace requestTrace = new HttpRequestTrace("1", "/test", Collections.emptyMap(), "PROST",
 				null, false, measurementSession, new RequestMonitorPlugin());
 

@@ -42,8 +42,11 @@ public class MDCListenerTest {
 
 	@Test
 	public void testMDCInstanceAlreadySet() throws Exception {
-		Stagemonitor.startMonitoring(new MeasurementSession("MDCListenerTest", "testHost", "testInstance")).get();
-		when(corePlugin.getMeasurementSession()).thenReturn(new MeasurementSession("MDCListenerTest", "testHost", "testInstance"));
+		Stagemonitor.startMonitoring(new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "MDCListenerTest", "testHost", "127.0.0.1", "testInstance"))
+				.get();
+		when(corePlugin.getMeasurementSession()).thenReturn(new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "MDCListenerTest", "testHost", "127.0.0.1", "testInstance"));
 		final ServletRequestEvent requestEvent = mock(ServletRequestEvent.class);
 		final ServletRequest request = mock(ServletRequest.class);
 		when(requestEvent.getServletRequest()).thenReturn(request);
@@ -61,7 +64,8 @@ public class MDCListenerTest {
 
 	@Test
 	public void testMDCInstanceNotAlreadySet() throws Exception {
-		when(corePlugin.getMeasurementSession()).thenReturn(new MeasurementSession("MDCListenerTest", "testHost", null));
+		when(corePlugin.getMeasurementSession()).thenReturn(new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "MDCListenerTest", "testHost", "127.0.0.1", null));
 
 		final ServletRequestEvent requestEvent = mock(ServletRequestEvent.class);
 		final ServletRequest request = mock(ServletRequest.class);
@@ -79,7 +83,8 @@ public class MDCListenerTest {
 	@Test
 	public void testMDCStagemonitorDeactivated() throws Exception {
 		when(corePlugin.isStagemonitorActive()).thenReturn(false);
-		when(corePlugin.getMeasurementSession()).thenReturn(new MeasurementSession("MDCListenerTest", "testHost", null));
+		when(corePlugin.getMeasurementSession()).thenReturn(new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "MDCListenerTest", "testHost", "127.0.0.1", null));
 
 		mdcListener.requestInitialized(mock(ServletRequestEvent.class));
 

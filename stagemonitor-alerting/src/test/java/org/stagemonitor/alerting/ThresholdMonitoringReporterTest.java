@@ -176,8 +176,8 @@ public class ThresholdMonitoringReporterTest {
 		Check check = createCheckCheckingMean(2, 6);
 		when(alertingPlugin.getChecks()).thenReturn(Collections.singletonMap(check.getId(), check));
 		incidentRepository.createIncident(
-				new Incident(check, new MeasurementSession("testGID", "testApp", "testHost2",
-						"127.0.0.1", "testInstance"),
+				new Incident(check, new MeasurementSession(
+						"a056120d-d28d-4438-98ef-7991f36886c5", "testApp", "testHost2", "127.0.0.1", "testInstance"),
 						Arrays.asList(new CheckResult("test", 10, CheckResult.Status.CRITICAL))));
 
 		checkMetrics(7, 0, 0);

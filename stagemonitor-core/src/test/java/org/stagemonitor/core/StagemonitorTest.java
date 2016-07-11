@@ -57,9 +57,11 @@ public class StagemonitorTest {
 		Stagemonitor.setConfiguration(configuration);
 		Stagemonitor.reset();
 
-		final MeasurementSession measurementSession = new MeasurementSession("StagemonitorTest", "testHost", "testInstance");
+		final MeasurementSession measurementSession = new MeasurementSession(
+				"gid", "StagemonitorTest", "testHost", "127.0.0.1", "testInstance");
 		Stagemonitor.startMonitoring(measurementSession).get();
-		Stagemonitor.startMonitoring(new MeasurementSession("StagemonitorTest2", "testHost2", "testInstance2")).get();
+		Stagemonitor.startMonitoring(new MeasurementSession(
+				"gid", "StagemonitorTest2", "testHost2", "127.0.0.1", "testInstance2")).get();
 
 		assertTrue(Stagemonitor.isStarted());
 		assertTrue(Stagemonitor.getMeasurementSession().isInitialized());
@@ -72,7 +74,8 @@ public class StagemonitorTest {
 	public void testStartMonitoringNotActive() throws Exception {
 		when(corePlugin.isStagemonitorActive()).thenReturn(false);
 
-		final MeasurementSession measurementSession = new MeasurementSession("StagemonitorTest", "testHost", "testInstance");
+		final MeasurementSession measurementSession = new MeasurementSession(
+				"gid", "StagemonitorTest", "testHost", "127.0.0.1", "testInstance");
 		Stagemonitor.startMonitoring(measurementSession).get();
 
 		assertTrue(Stagemonitor.isDisabled());
@@ -87,7 +90,8 @@ public class StagemonitorTest {
 		when(corePlugin.isStagemonitorActive()).thenReturn(true);
 		when(corePlugin.getDisabledPlugins()).thenReturn(Arrays.asList("TestExceptionPlugin"));
 
-		Stagemonitor.startMonitoring(new MeasurementSession("StagemonitorTest", "testHost", "testInstance")).get();
+		Stagemonitor.startMonitoring(new MeasurementSession(
+				"gid", "StagemonitorTest", "testHost", "127.0.0.1", "testInstance")).get();
 
 		verify(logger).info("Initializing plugin {}", "TestPlugin");
 		verify(logger).info("Not initializing disabled plugin {}", "TestExceptionPlugin");
@@ -98,7 +102,8 @@ public class StagemonitorTest {
 	public void testNotInitialized() throws Exception {
 		when(corePlugin.isStagemonitorActive()).thenReturn(true);
 
-		final MeasurementSession measurementSession = new MeasurementSession(null, "testHost", "testInstance");
+		final MeasurementSession measurementSession = new MeasurementSession(
+				"gid", null, "testHost", "127.0.0.1", "testInstance");
 		Stagemonitor.startMonitoring(measurementSession).get();
 
 		verify(logger, atLeastOnce()).warn("Measurement Session is not initialized: {}", measurementSession);

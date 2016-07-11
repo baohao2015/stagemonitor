@@ -75,7 +75,9 @@ public class ElasticsearchRequestTraceReporterTest {
 	@Test
 	public void testLogReportRequestTrace() throws Exception {
 		when(requestMonitorPlugin.isOnlyLogElasticsearchRequestTraceReports()).thenReturn(true);
-		final RequestTrace requestTrace = new RequestTrace("abc", new MeasurementSession(getClass().getName(), "test", "test"), requestMonitorPlugin);
+		final RequestTrace requestTrace = new RequestTrace("abc", new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", getClass().getName(), "test", "127.0.0.1", "test"),
+				requestMonitorPlugin);
 		requestTrace.setName("Report Me");
 
 		reporter.reportRequestTrace(new RequestTraceReporter.ReportArguments(requestTrace));
@@ -181,7 +183,8 @@ public class ElasticsearchRequestTraceReporterTest {
 	}
 
 	private RequestTrace createTestRequestTraceWithCallTree(long executionTime) {
-		final RequestTrace requestTrace = new RequestTrace(UUID.randomUUID().toString(), new MeasurementSession("ERTRT", "test", "test"), requestMonitorPlugin);
+		final RequestTrace requestTrace = new RequestTrace(UUID.randomUUID().toString(), new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "ERTRT", "test", "127.0.0.1", "test"), requestMonitorPlugin);
 		requestTrace.setCallStack(CallStackElement.createRoot("test"));
 		requestTrace.setName("Report Me");
 		requestTrace.setExecutionTime(executionTime);

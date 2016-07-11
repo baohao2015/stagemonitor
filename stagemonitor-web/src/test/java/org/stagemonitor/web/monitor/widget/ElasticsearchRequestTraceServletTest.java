@@ -30,7 +30,9 @@ public class ElasticsearchRequestTraceServletTest extends ElasticsearchRequestTr
 
 	@Test
 	public void testRequestTraceServlet() throws Exception {
-		final RequestTrace requestTrace = new RequestTrace("1", new MeasurementSession("ElasticsearchRequestTraceServletTest", "test", "test"), requestMonitorPlugin);
+		final RequestTrace requestTrace = new RequestTrace("1", new MeasurementSession(
+				"a056120d-d28d-4438-98ef-7991f36886c5", "ElasticsearchRequestTraceServletTest",
+					"test", "127.0.0.1", "test"), requestMonitorPlugin);
 		requestTrace.setParameters(Collections.singletonMap("attr.Color", "Blue"));
 		reporter.reportRequestTrace(new RequestTraceReporter.ReportArguments(requestTrace));
 		elasticsearchClient.waitForCompletion();
