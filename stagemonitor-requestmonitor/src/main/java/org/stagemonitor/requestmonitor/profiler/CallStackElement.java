@@ -33,6 +33,7 @@ public class CallStackElement {
 	@JsonIgnore
 	private CallStackElement parent;
 	private String signature;
+	private String signatureRaw;
 	private long executionTime;
 	private List<CallStackElement> children = new LinkedList<CallStackElement>();
 
@@ -75,6 +76,7 @@ public class CallStackElement {
 		}
 		parent = null;
 		signature = null;
+		signatureRaw = null;
 		executionTime = 0;
 		for (CallStackElement child : children) {
 			child.recycle();
@@ -137,6 +139,14 @@ public class CallStackElement {
 
 	public void setSignature(String signature) {
 		this.signature = signature;
+	}
+
+	public String getSignatureRaw() {
+		return signatureRaw;
+	}
+
+	public void setSignatureRaw(String signatureRaw) {
+		this.signatureRaw = signatureRaw;
 	}
 
 	/**

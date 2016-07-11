@@ -75,7 +75,7 @@ public class StagemonitorP6Logger implements P6Logger {
 		if (jdbcPlugin.isCollectPreparedStatementParameters()) {
 			Profiler.addIOCall(sql, TimeUnit.MILLISECONDS.toNanos(elapsed));
 		} else {
-			Profiler.addIOCall(prepared, TimeUnit.MILLISECONDS.toNanos(elapsed));
+			Profiler.addIOCall(prepared, sql, TimeUnit.MILLISECONDS.toNanos(elapsed));
 		}
 	}
 
