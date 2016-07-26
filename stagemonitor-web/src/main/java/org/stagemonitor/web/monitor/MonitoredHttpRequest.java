@@ -177,8 +177,8 @@ public class MonitoredHttpRequest implements MonitoredRequest<HttpRequestTrace> 
 
 		int status = responseWrapper.getStatus();
 		request.setStatusCode(status);
-		metricRegistry.meterExt(name("request_throughput").tag("request_name", info.getRequestName()).tag("http_code", status).build()).mark();
-		metricRegistry.meterExt(name("request_throughput").tag("request_name", "All").tag("http_code", status).build()).mark();
+		metricRegistry.meterExt(name("request_throughput").tag("request_name", info.getRequestName()).tag("http_code", status).tag("url", request.getUrl()).build()).mark();
+		metricRegistry.meterExt(name("request_throughput").tag("request_name", "All").tag("http_code", status).tag("url", "All").build()).mark();
 		if (status >= 400) {
 			request.setError(true);
 		}
