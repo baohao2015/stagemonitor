@@ -97,6 +97,7 @@ public class ConnectionMonitor {
 			ensureUrlExistsForDataSource((DataSource) dataSource, connection);
 			String url = dataSourceUrlMap.get(dataSource);
 			metricRegistry.timerExt(name("get_jdbc_connection").tag("url", url).build()).update(duration, TimeUnit.NANOSECONDS);
+			metricRegistry.timerExt(name("get_jdbc_connection").tag("url", "All").build()).update(duration, TimeUnit.NANOSECONDS);
 			return collectSql ? P6Core.wrapConnection(connection) : connection;
 		} else {
 			return connection;
