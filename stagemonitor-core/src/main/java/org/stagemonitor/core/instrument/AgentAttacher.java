@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
-import java.lang.stagemonitor.dispatcher.Dispatcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +35,7 @@ import org.stagemonitor.core.CorePlugin;
 import org.stagemonitor.core.Stagemonitor;
 import org.stagemonitor.core.util.ClassUtils;
 import org.stagemonitor.core.util.IOUtils;
+import __redirected.org.stagemonitor.dispatcher.Dispatcher;
 
 /**
  * Attaches the {@link ByteBuddyAgent} at runtime and registers all {@link StagemonitorByteBuddyTransformer}s
@@ -43,7 +43,7 @@ import org.stagemonitor.core.util.IOUtils;
 public class AgentAttacher {
 
 	private static final Logger logger = LoggerFactory.getLogger(AgentAttacher.class);
-	private static final String DISPATCHER_CLASS_NAME = "java.lang.stagemonitor.dispatcher.Dispatcher";
+	private static final String DISPATCHER_CLASS_NAME = "__redirected.org.stagemonitor.dispatcher.Dispatcher";
 	private static final String IGNORED_CLASSLOADERS_KEY = AgentAttacher.class.getName() + "hashCodesOfClassLoadersToIgnore";
 	private static final AutoEvictingCachingBinaryLocator binaryLocator = new AutoEvictingCachingBinaryLocator();
 	private static final Runnable NOOP_ON_SHUTDOWN_ACTION = new Runnable() {
