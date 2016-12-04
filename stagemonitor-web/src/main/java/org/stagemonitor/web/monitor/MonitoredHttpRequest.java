@@ -1,5 +1,23 @@
 package org.stagemonitor.web.monitor;
 
+import static org.stagemonitor.core.metrics.metrics2.MetricName.name;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import javax.servlet.FilterChain;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.stagemonitor.core.Stagemonitor;
 import org.stagemonitor.core.configuration.Configuration;
 import org.stagemonitor.core.metrics.metrics2.Metric2Registry;
@@ -12,231 +30,219 @@ import org.stagemonitor.web.logging.MDCListener;
 import org.stagemonitor.web.monitor.filter.StatusExposingByteCountingServletResponse;
 import org.stagemonitor.web.monitor.widget.WidgetAjaxRequestTraceReporter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.Principal;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import static org.stagemonitor.core.metrics.metrics2.MetricName.name;
-
 public class MonitoredHttpRequest implements MonitoredRequest<HttpRequestTrace> {
 
-    protected final HttpServletRequest httpServletRequest;
-    protected final FilterChain filterChain;
-    protected final StatusExposingByteCountingServletResponse responseWrapper;
-    protected final WebPlugin webPlugin;
-    private final Configuration configuration;
-    private final Metric2Registry metricRegistry;
-    private final RequestMonitorPlugin requestMonitorPlugin;
+	protected final HttpServletRequest httpServletRequest;
+	protected final FilterChain filterChain;
+	protected final StatusExposingByteCountingServletResponse responseWrapper;
+	private final Configuration configuration;
+	protected final WebPlugin webPlugin;
+	private final Metric2Registry metricRegistry;
+	private final RequestMonitorPlugin requestMonitorPlugin;
 
-    public MonitoredHttpRequest(HttpServletRequest httpServletRequest,
-                                StatusExposingByteCountingServletResponse responseWrapper,
-                                FilterChain filterChain, Configuration configuration) {
-        this.httpServletRequest = httpServletRequest;
-        this.filterChain = filterChain;
-        this.responseWrapper = responseWrapper;
-        this.configuration = configuration;
-        this.webPlugin = configuration.getConfig(WebPlugin.class);
-        this.metricRegistry = Stagemonitor.getMetric2Registry();
-        requestMonitorPlugin = configuration.getConfig(RequestMonitorPlugin.class);
-    }
+	public MonitoredHttpRequest(HttpServletRequest httpServletRequest,
+								StatusExposingByteCountingServletResponse responseWrapper,
+								FilterChain filterChain, Configuration configuration) {
+		this.httpServletRequest = httpServletRequest;
+		this.filterChain = filterChain;
+		this.responseWrapper = responseWrapper;
+		this.configuration = configuration;
+		this.webPlugin = configuration.getConfig(WebPlugin.class);
+		this.metricRegistry = Stagemonitor.getMetric2Registry();
+		requestMonitorPlugin = configuration.getConfig(RequestMonitorPlugin.class);
+	}
 
-    public static String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        ip = getIpFromHeaderIfNotAlreadySet("X-Real-IP", request, ip);
-        ip = getIpFromHeaderIfNotAlreadySet("Proxy-Client-IP", request, ip);
-        ip = getIpFromHeaderIfNotAlreadySet("WL-Proxy-Client-IP", request, ip);
-        ip = getIpFromHeaderIfNotAlreadySet("HTTP_CLIENT_IP", request, ip);
-        ip = getIpFromHeaderIfNotAlreadySet("HTTP_X_FORWARDED_FOR", request, ip);
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
-    }
+	@Override
+	public String getInstanceName() {
+		return httpServletRequest.getServerName();
+	}
 
-    private static String getIpFromHeaderIfNotAlreadySet(String header, HttpServletRequest request, String ip) {
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader(header);
-        }
-        return ip;
-    }
+	@Override
+	public HttpRequestTrace createRequestTrace() {
+		Map<String, String> headers = null;
+		if (webPlugin.isCollectHttpHeaders()) {
+			headers = getHeaders(httpServletRequest);
+		}
+		final String url = httpServletRequest.getRequestURI();
+		final String method = httpServletRequest.getMethod();
+		final String connectionId = httpServletRequest.getHeader(WidgetAjaxRequestTraceReporter.CONNECTION_ID);
+		final String requestId = (String) httpServletRequest.getAttribute(MDCListener.STAGEMONITOR_REQUEST_ID_ATTR);
+		final boolean isShowWidgetAllowed = webPlugin.isWidgetAndStagemonitorEndpointsAllowed(httpServletRequest, configuration);
+		HttpRequestTrace request = new HttpRequestTrace(requestId, url, headers, method, connectionId, isShowWidgetAllowed);
 
-    public static String getRequestNameByRequest(HttpServletRequest request, WebPlugin webPlugin) {
-        String requestURI = removeSemicolonContent(request.getRequestURI().substring(request.getContextPath().length()));
-        for (Map.Entry<Pattern, String> entry : webPlugin.getGroupUrls().entrySet()) {
-            requestURI = entry.getKey().matcher(requestURI).replaceAll(entry.getValue());
-        }
-        return request.getMethod() + " " + requestURI;
-    }
+		request.setReferringSite(getReferringSite());
+		request.setName(getRequestName());
 
-    private static String removeSemicolonContent(String requestUri) {
-        int semicolonIndex = requestUri.indexOf(';');
-        while (semicolonIndex != -1) {
-            int slashIndex = requestUri.indexOf('/', semicolonIndex);
-            String start = requestUri.substring(0, semicolonIndex);
-            requestUri = (slashIndex != -1) ? start + requestUri.substring(slashIndex) : start;
-            semicolonIndex = requestUri.indexOf(';', semicolonIndex);
-        }
-        return requestUri;
-    }
+		return request;
+	}
 
-    @Override
-    public String getInstanceName() {
-        return httpServletRequest.getServerName();
-    }
+	private String getReferringSite() {
+		final String refererHeader = httpServletRequest.getHeader("Referer");
+		if (StringUtils.isEmpty(refererHeader)) {
+			return null;
+		}
+		String referrerHost;
+		try {
+			referrerHost = new URI(refererHeader).getHost();
+		} catch (URISyntaxException e) {
+			referrerHost = null;
+		}
+		if (httpServletRequest.getServerName().equals(referrerHost)) {
+			return null;
+		} else {
+			return referrerHost;
+		}
+	}
 
-    @Override
-    public HttpRequestTrace createRequestTrace() {
-        Map<String, String> headers = null;
-        if (webPlugin.isCollectHttpHeaders()) {
-            headers = getHeaders(httpServletRequest);
-        }
-        final String url = httpServletRequest.getRequestURI();
-        final String method = httpServletRequest.getMethod();
-        final String connectionId = httpServletRequest.getHeader(WidgetAjaxRequestTraceReporter.CONNECTION_ID);
-        final String requestId = (String) httpServletRequest.getAttribute(MDCListener.STAGEMONITOR_REQUEST_ID_ATTR);
-        final boolean isShowWidgetAllowed = webPlugin.isWidgetAndStagemonitorEndpointsAllowed(httpServletRequest, configuration);
-        HttpRequestTrace request = new HttpRequestTrace(requestId, url, headers, method, connectionId, isShowWidgetAllowed);
+	public static String getClientIp(HttpServletRequest request) {
+		String ip = request.getHeader("X-Forwarded-For");
+		ip = getIpFromHeaderIfNotAlreadySet("X-Real-IP", request, ip);
+		ip = getIpFromHeaderIfNotAlreadySet("Proxy-Client-IP", request, ip);
+		ip = getIpFromHeaderIfNotAlreadySet("WL-Proxy-Client-IP", request, ip);
+		ip = getIpFromHeaderIfNotAlreadySet("HTTP_CLIENT_IP", request, ip);
+		ip = getIpFromHeaderIfNotAlreadySet("HTTP_X_FORWARDED_FOR", request, ip);
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getRemoteAddr();
+		}
+		return ip;
+	}
 
-        request.setReferringSite(getReferringSite());
-        request.setName(getRequestName());
+	private static String getIpFromHeaderIfNotAlreadySet(String header, HttpServletRequest request, String ip) {
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader(header);
+		}
+		return ip;
+	}
 
-        return request;
-    }
+	public String getRequestName() {
+		if (webPlugin.isMonitorOnlySpringMvcRequests() || webPlugin.isMonitorOnlyResteasyRequests()) {
+			return null;
+		} else {
+			return getRequestNameByRequest(httpServletRequest, webPlugin);
+		}
+	}
 
-    private String getReferringSite() {
-        final String refererHeader = httpServletRequest.getHeader("Referer");
-        if (StringUtils.isEmpty(refererHeader)) {
-            return null;
-        }
-        String referrerHost;
-        try {
-            referrerHost = new URI(refererHeader).getHost();
-        } catch (URISyntaxException e) {
-            referrerHost = null;
-        }
-        if (httpServletRequest.getServerName().equals(referrerHost)) {
-            return null;
-        } else {
-            return referrerHost;
-        }
-    }
+	public static String getRequestNameByRequest(HttpServletRequest request, WebPlugin webPlugin) {
+		String requestURI = removeSemicolonContent(request.getRequestURI().substring(request.getContextPath().length()));
+		for (Map.Entry<Pattern, String> entry : webPlugin.getGroupUrls().entrySet()) {
+			requestURI = entry.getKey().matcher(requestURI).replaceAll(entry.getValue());
+		}
+		return request.getMethod() + " " + requestURI;
+	}
 
-    public String getRequestName() {
-        if (webPlugin.isMonitorOnlySpringMvcRequests() || webPlugin.isMonitorOnlyResteasyRequests()) {
-            return null;
-        } else {
-            return getRequestNameByRequest(httpServletRequest, webPlugin);
-        }
-    }
+	private static String removeSemicolonContent(String requestUri) {
+		int semicolonIndex = requestUri.indexOf(';');
+		while (semicolonIndex != -1) {
+			int slashIndex = requestUri.indexOf('/', semicolonIndex);
+			String start = requestUri.substring(0, semicolonIndex);
+			requestUri = (slashIndex != -1) ? start + requestUri.substring(slashIndex) : start;
+			semicolonIndex = requestUri.indexOf(';', semicolonIndex);
+		}
+		return requestUri;
+	}
 
-    private Map<String, String> getHeaders(HttpServletRequest request) {
-        Map<String, String> headers = new HashMap<String, String>();
-        final Enumeration headerNames = request.getHeaderNames();
-        final Collection<String> excludedHeaders = webPlugin.getExcludeHeaders();
-        while (headerNames.hasMoreElements()) {
-            final String headerName = ((String) headerNames.nextElement()).toLowerCase();
-            if (!excludedHeaders.contains(headerName)) {
-                headers.put(headerName, request.getHeader(headerName));
-            }
-        }
-        return headers;
-    }
+	private Map<String, String> getHeaders(HttpServletRequest request) {
+		Map<String, String> headers = new HashMap<String, String>();
+		final Enumeration headerNames = request.getHeaderNames();
+		final Collection<String> excludedHeaders = webPlugin.getExcludeHeaders();
+		while (headerNames.hasMoreElements()) {
+			final String headerName = ((String) headerNames.nextElement()).toLowerCase();
+			if (!excludedHeaders.contains(headerName)) {
+				headers.put(headerName, request.getHeader(headerName));
+			}
+		}
+		return headers;
+	}
 
-    @Override
-    public Object execute() throws Exception {
-        filterChain.doFilter(httpServletRequest, responseWrapper);
-        return null;
-    }
+	@Override
+	public Object execute() throws Exception {
+		filterChain.doFilter(httpServletRequest, responseWrapper);
+		return null;
+	}
 
-    @Override
-    public void onPostExecute(RequestMonitor.RequestInformation<HttpRequestTrace> info) {
-        HttpRequestTrace request = info.getRequestTrace();
+	@Override
+	public void onPostExecute(RequestMonitor.RequestInformation<HttpRequestTrace> info) {
+		HttpRequestTrace request = info.getRequestTrace();
 
-        final String clientIp = getClientIp(httpServletRequest);
-        final String userName = getUserName(request);
-        final String userAgent = httpServletRequest.getHeader("user-agent");
-        final String sessionId = getSessionId();
-        request.setUsername(userName);
-        request.setSessionId(sessionId);
-        if (userName != null) {
-            request.setUniqueVisitorId(StringUtils.sha1Hash(userName));
-        } else {
-            request.setUniqueVisitorId(StringUtils.sha1Hash(clientIp + sessionId + userAgent));
-        }
+		final String clientIp = getClientIp(httpServletRequest);
+		final String userName = getUserName(request);
+		final String userAgent = httpServletRequest.getHeader("user-agent");
+		final String sessionId = getSessionId();
+		request.setUsername(userName);
+		request.setSessionId(sessionId);
+		if (userName != null) {
+			request.setUniqueVisitorId(StringUtils.sha1Hash(userName));
+		} else {
+			request.setUniqueVisitorId(StringUtils.sha1Hash(clientIp + sessionId + userAgent));
+		}
 
-        int status;
-        if (responseWrapper.getResponse() instanceof HttpServletResponse) {
-            status = ((HttpServletResponse) responseWrapper.getResponse()).getStatus();
-        } else {
-            status = responseWrapper.getStatus();
-        }
+		int status;
+		if (responseWrapper.getResponse() instanceof HttpServletResponse) {
+			status = ((HttpServletResponse) responseWrapper.getResponse()).getStatus();
+		} else {
+			status = responseWrapper.getStatus();
+		}
 
-        request.setStatusCode(status);
-        metricRegistry.meterExt(name("request_throughput").tag("request_name", info.getRequestName()).tag("url", request.getUrl()).build()).mark();
-        metricRegistry.meterExt(name("request_throughput").tag("request_name", "All").tag("url", "All").build()).mark();
-        metricRegistry.meterExt(name("request_throughput").tag("request_name", info.getRequestName()).tag("http_code", status).tag("url", request.getUrl()).build()).mark();
-        metricRegistry.meterExt(name("request_throughput").tag("request_name", "All").tag("http_code", status).tag("url", "All").build()).mark();
-        if (status >= 400) {
-            request.setError(true);
-            metricRegistry.meterExt(name("request_error_throughput").tag("request_name", info.getRequestName()).tag("url", request.getUrl()).build()).mark();
-            metricRegistry.meterExt(name("request_error_throughput").tag("request_name", "All").tag("url", "All").build()).mark();
-        }
+		request.setStatusCode(status);
+		metricRegistry.meterExt(name("request_throughput").tag("request_name", info.getRequestName()).tag("url", request.getUrl()).build()).mark();
+		metricRegistry.meterExt(name("request_throughput").tag("request_name", "All").tag("url", "All").build()).mark();
+		metricRegistry.meterExt(name("request_throughput").tag("request_name", info.getRequestName()).tag("http_code", status).tag("url", request.getUrl()).build()).mark();
+		metricRegistry.meterExt(name("request_throughput").tag("request_name", "All").tag("http_code", status).tag("url", "All").build()).mark();
+		if (status >= 400) {
+			request.setError(true);
+			metricRegistry.meterExt(name("request_error_throughput").tag("request_name", info.getRequestName()).tag("url", request.getUrl()).build()).mark();
+			metricRegistry.meterExt(name("request_error_throughput").tag("request_name", "All").tag("url", "All").build()).mark();
+		}
 
-        // Search the configured exception attributes that may have been set
-        // by the servlet container/framework. Use the first exception found (if any)
-        for (String requestExceptionAttribute : webPlugin.getRequestExceptionAttributes()) {
-            Object exception = httpServletRequest.getAttribute(requestExceptionAttribute);
-            if (exception != null && exception instanceof Exception) {
-                request.setException((Exception) exception);
-                break;
-            }
-        }
+		// Search the configured exception attributes that may have been set
+		// by the servlet container/framework. Use the first exception found (if any)
+		for (String requestExceptionAttribute : webPlugin.getRequestExceptionAttributes()) {
+			Object exception = httpServletRequest.getAttribute(requestExceptionAttribute);
+			if (exception != null && exception instanceof Exception) {
+				request.setException((Exception) exception);
+				break;
+			}
+		}
+		
+		request.setBytesWritten(responseWrapper.getContentLength());
 
-        request.setBytesWritten(responseWrapper.getContentLength());
+		// get the parameters after the execution and not on creation, because that could lead to wrong decoded
+		// parameters inside the application
+		@SuppressWarnings("unchecked") // according to javadoc, its always a Map<String, String[]>
+		final Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
+		Map<String, String> params = new HashMap<String, String>();
+		for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+			params.put(entry.getKey(), StringUtils.toCommaSeparatedString(entry.getValue()));
+		}
+		Set<Pattern> confidentialParams = new HashSet<Pattern>();
+		confidentialParams.addAll(webPlugin.getRequestParamsConfidential());
+		confidentialParams.addAll(requestMonitorPlugin.getConfidentialParameters());
+		request.setParameters(requestMonitorPlugin.getSafeParameterMap(params, confidentialParams));
+	}
 
-        // get the parameters after the execution and not on creation, because that could lead to wrong decoded
-        // parameters inside the application
-        @SuppressWarnings("unchecked") // according to javadoc, its always a Map<String, String[]>
-        final Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
-        Map<String, String> params = new HashMap<String, String>();
-        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
-            params.put(entry.getKey(), StringUtils.toCommaSeparatedString(entry.getValue()));
-        }
-        Set<Pattern> confidentialParams = new HashSet<Pattern>();
-        confidentialParams.addAll(webPlugin.getRequestParamsConfidential());
-        confidentialParams.addAll(requestMonitorPlugin.getConfidentialParameters());
-        request.setParameters(requestMonitorPlugin.getSafeParameterMap(params, confidentialParams));
-    }
+	private String getSessionId() {
+		final HttpSession session = httpServletRequest.getSession(false);
+		return session != null ? session.getId() : null;
+	}
 
-    private String getSessionId() {
-        final HttpSession session = httpServletRequest.getSession(false);
-        return session != null ? session.getId() : null;
-    }
+	private String getUserName(HttpRequestTrace request) {
+		if (request.getUsername() != null) {
+			return request.getUsername();
+		}
+		final Principal userPrincipal = httpServletRequest.getUserPrincipal();
+		return userPrincipal != null ? userPrincipal.getName() : null;
+	}
 
-    private String getUserName(HttpRequestTrace request) {
-        if (request.getUsername() != null) {
-            return request.getUsername();
-        }
-        final Principal userPrincipal = httpServletRequest.getUserPrincipal();
-        return userPrincipal != null ? userPrincipal.getName() : null;
-    }
-
-    /**
-     * In a web context, we only want to monitor forwarded requests.
-     * If a request to /a makes a
-     * {@link javax.servlet.RequestDispatcher#forward(javax.servlet.ServletRequest, javax.servlet.ServletResponse)}
-     * to /b, we only want to collect metrics for /b, because it is the request, that does the actual computation.
-     *
-     * @return true
-     */
-    @Override
-    public boolean isMonitorForwardedExecutions() {
-        return true;
-    }
+	/**
+	 * In a web context, we only want to monitor forwarded requests.
+	 * If a request to /a makes a
+	 * {@link javax.servlet.RequestDispatcher#forward(javax.servlet.ServletRequest, javax.servlet.ServletResponse)}
+	 * to /b, we only want to collect metrics for /b, because it is the request, that does the actual computation.
+	 *
+	 * @return true
+	 */
+	@Override
+	public boolean isMonitorForwardedExecutions() {
+		return true;
+	}
 }
