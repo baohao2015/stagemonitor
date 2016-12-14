@@ -1,7 +1,7 @@
 package org.stagemonitor.core.metrics.metrics2;
 
 import java.util.List;
-import java.util.LinkedList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.Clock;
@@ -15,7 +15,7 @@ import com.codahale.metrics.Meter;
  */
 public class MeterExt extends Meter {
 
-    List<Long> bucket = new LinkedList<Long>();
+    List<Long> bucket = new CopyOnWriteArrayList<Long>();
 
     /**
      * Creates a new {@link MeterExt}.
@@ -43,6 +43,7 @@ public class MeterExt extends Meter {
         super.mark(n);
 
         tickIfNecessary();
+
         while (n-- > 0) {
             this.bucket.add(System.currentTimeMillis());
         }
